@@ -1,8 +1,8 @@
 {
   "name": "upload-assets-oss",
-  "version": "0.0.2",
+  "version": "0.0.13",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "typings": "./dist/index.d.ts",
   "repository": {
     "type": "git",
@@ -13,12 +13,13 @@
   },
   "homepage": "https://github.com/jialongsu/upload-assets-oss#readme",
   "scripts": {
-    "dev": "yarn build -- --watch --ignore-watch examples",
-    "build": "tsup src/index.ts"
+    "dev": "yarn build:tsup -- --watch --ignore-watch examples",
+    "build": "tsc -p tsconfig.json",
+    "build:tsup": "tsup src/index.ts --format esm,cjs --dts --clean"
   },
   "dependencies": {
     "chalk": "^4.1.2",
-    "lodash-es": "^4.17.21",
+    "lodash": "^4.17.21",
     "qiniu": "^7.7.0"
   },
   "files": [
