@@ -73,7 +73,7 @@ class NpmQiuniuPlugin {
       : difference(uploadFilePathAry, resourceList); // 获取需要上传的文件
 
     if (deleteAry.length > 0) {
-      await this.qiniu.batchDeleteFile(deleteAry); // 删除文件
+      // await this.qiniu.batchDeleteFile(deleteAry); // 删除文件
     }
 
     return uploadAry;

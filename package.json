@@ -1,6 +1,6 @@
 {
   "name": "upload-assets-oss",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "type": "module",
   "main": "./dist/index.cjs",
   "typings": "./dist/index.d.ts",
