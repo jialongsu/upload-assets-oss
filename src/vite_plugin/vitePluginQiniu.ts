@@ -40,7 +40,7 @@ export default function vitePluginQiniu(options: Options): Plugin {
     },
     closeBundle() {
       const filePathAry = getFilePaths(outputPath);
-      qiniu.apply({
+      return qiniu.apply({
         filePathAry,
         outputPath,
       });

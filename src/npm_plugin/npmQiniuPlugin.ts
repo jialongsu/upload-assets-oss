@@ -4,12 +4,9 @@
  * @LastEditors: Arno.su
  * @LastEditTime: 2022-10-21 17:23:43
  */
-import difference from 'lodash/difference.js';
 import Qiniu, { type Options } from '../oss_plugin/qiniu';
 import { log } from '../utils/log';
 import { getProjectName } from '../utils/utils';
-
-let projectName = getProjectName();
 
 class NpmQiuniuPlugin {
   options: Options;
@@ -18,9 +15,6 @@ class NpmQiuniuPlugin {
   constructor(options: Options) {
     this.qiniu = new Qiniu(options);
     this.options = options;
-    if (options.rootName) {
-      projectName = options.rootName;
-    }
   }
 
   apply({
@@ -30,20 +24,13 @@ class NpmQiuniuPlugin {
     filePathAry: string[];
     outputPath: string;
   }) {
-    this.batchUpload(filePathAry, outputPath);
+    return this.batchUpload(filePathAry, outputPath);
   }
 
   async batchUpload(filePathAry: string[], buildPath: string) {
-    const { isLog } = this.options;
-    const uploadData: { [key: string]: string } = {};
-
-    filePathAry.forEach((filename) => {
-      uploadData[`${projectName}/${filename}`] = `${buildPath}/${filename}`;
-    });
-
-    const uploadAry = await this.batchDelete(Object.keys(uploadData));
-    const len = uploadAry.length;
-    const maxIndex = len - 1;
+    const { isLog, rootName } = this.options;
+    const projectName = rootName || getProjectName();
+    const len = filePathAry.length;
 
     if (len === 0) {
       log(`😭  没有发现需要上传的文件 \n`);
@@ -51,32 +38,31 @@ class NpmQiuniuPlugin {
     }
 
     log(`⬆️   将上传 ${len} 个文件`);
-    uploadAry.forEach(async (key: string, i: number) => {
-      const filePath = uploadData[key];
-
+    let successCount = 0;
+    let skippedCount = 0;
+    const failures: string[] = [];
+    // 逐个等待上传，接住每个 Promise，并避免 SDK 并发清理区域缓存时的锁冲突。
+    for (const [i, filename] of filePathAry.entries()) {
+      const key = `${projectName}/${filename}`;
+      const filePath = `${buildPath}/${filename}`;
       isLog && log(`🚀  正在上传第 ${i + 1} 个文件: ${key}`);
-      await this.qiniu.putFile(key, filePath);
-      if (maxIndex === i) {
-        log(`👏  上传完成！`);
+      try {
+        if (await this.qiniu.putFile(key, filePath)) {
+          successCount += 1;
+        } else {
+          skippedCount += 1;
+          isLog && log(`⏭️  文件已存在，跳过: ${key}`);
+        }
+      } catch (error) {
+        failures.push(error instanceof Error ? error.message : `上传失败 ${key}：${String(error)}`);
       }
-    });
-  }
-
-  async batchDelete(uploadFilePathAry: string[]) {
-    const { forceDelete } = this.options;
-    const resourceList = await this.qiniu.getResouceList(projectName); // 获取之前上传七牛的文件
-    const deleteAry = forceDelete
-      ? resourceList
-      : difference(resourceList, uploadFilePathAry); // 获取需要先在七牛上删除的文件
-    const uploadAry = forceDelete
-      ? uploadFilePathAry
-      : difference(uploadFilePathAry, resourceList); // 获取需要上传的文件
-
-    if (deleteAry.length > 0) {
-      // await this.qiniu.batchDeleteFile(deleteAry); // 删除文件
     }
-
-    return uploadAry;
+    log(`上传结果：成功 ${successCount}，跳过 ${skippedCount}，失败 ${failures.length}`,
+      failures.length > 0 ? 'red' : 'green');
+    if (failures.length > 0) {
+      throw new Error(failures.join('\n'));
+    }
+    log('👏  上传完成！');
   }
 }
 

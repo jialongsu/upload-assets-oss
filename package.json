@@ -1,6 +1,6 @@
 {
   "name": "upload-assets-oss",
-  "version": "0.0.14",
+  "version": "0.0.16",
   "type": "module",
   "main": "./dist/index.cjs",
   "typings": "./dist/index.d.ts",
@@ -15,12 +15,13 @@
   "scripts": {
     "dev": "yarn build:tsup -- --watch --ignore-watch examples",
     "build": "tsc -p tsconfig.json",
-    "build:tsup": "tsup src/index.ts --format esm,cjs --dts --clean"
+    "build:tsup": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "test": "pnpm build:tsup && node --test tests/*.test.cjs"
   },
   "dependencies": {
     "chalk": "^4.1.2",
     "lodash": "^4.17.21",
-    "qiniu": "^7.7.0"
+    "qiniu": "^7.11.1"
   },
   "files": [
     "dist"

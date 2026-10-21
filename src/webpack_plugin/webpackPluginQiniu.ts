@@ -19,12 +19,14 @@ class WebpackPluginQiniu {
   apply(compiler: any) {
     compiler.hooks.afterEmit.tapAsync(
       PLUGIN_NAME,
-      async (compilation: any, callback: any) => {
+      (compilation: any, callback: any) => {
         const filePathAry = Object.keys(compilation.assets);
         const outputPath = compilation.options.output.path;
 
-        callback();
-        this.qiniu.apply({ filePathAry, outputPath });
+        this.qiniu.apply({ filePathAry, outputPath }).then(
+          () => callback(),
+          (error) => callback(error)
+        );
       }
     );
   }
